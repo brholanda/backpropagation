@@ -13,7 +13,7 @@ public class TreinadorRede extends Treinador {
 
 		Boolean saidasOk;
 		
-		Rede rede = new Rede(conjuntoEntradas.length, 1000, 1000, 1000, 2);
+		Rede rede = new Rede(conjuntoEntradas.length, 3, 2);
 		
 		do {
 			saidasOk = true;
