@@ -2,6 +2,7 @@ package br.com.rn;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import br.com.rn.neurorio.Neuronio;
 import br.com.rn.neurorio.Sinapse;
@@ -14,9 +15,13 @@ public class Rede {
 	private Map<Neuronio, Double> memo;
 	private Map<Sinapse, Double> mapaMudancas;
 	private int qtdNeuroniosSaida;
+	private Random random;
 
 	public Rede(int... neuroniosCamadas) {
 		this.neuroniosCamadas = neuroniosCamadas;
+		mapaMudancas = new HashMap<>();
+		
+		random = new Random(5);
 		
 		int indiceSaidas = neuroniosCamadas.length - 1;
 		qtdNeuroniosSaida = neuroniosCamadas[indiceSaidas];
@@ -51,6 +56,7 @@ public class Rede {
 					sinapse = new Sinapse();
 					sinapse.setOrigem(neuronios[j]);
 					sinapse.setDestino(neuronio);
+					sinapse.setPeso((double) random.nextInt(10));
 					sinapsesDestino[k] = sinapse;
 					sinapsesOrigem[indiceOrigem] = sinapse;
 					neuronio.setSinapsesOrigem(sinapsesOrigem);
@@ -60,8 +66,12 @@ public class Rede {
 			ultimoIndice += neuroniosCamadas[i];
 		}
 		
-		for (int i = 1; i < neuronios.length; i ++) {
-			for (int j = 0; i < neuronios[i].getSinapsesOrigem().length; j ++) {
+		inicializarMapaMudanca();
+	}
+	
+	private void inicializarMapaMudanca() {
+		for (int i = neuroniosCamadas[0]; i < neuronios.length; i ++) {
+			for (int j = 0; j < neuronios[i].getSinapsesOrigem().length; j ++) {
 				mapaMudancas.put(neuronios[i].getSinapsesOrigem()[j], 0d);
 			}
 		}
@@ -70,7 +80,7 @@ public class Rede {
 	public double[] processarSaidas(double[] conjuntoEntradas) {
 		memo = new HashMap<>();
 		for(int i = 0; i < neuroniosCamadas[0]; i++) {
-			memo.put(neuronios[i], neuronios[i].saidaAxionio(conjuntoEntradas[i]));
+			memo.put(neuronios[i], neuronios[i].ativar(conjuntoEntradas[i]));
 		}
 		
 		double[] saidas = new double[qtdNeuroniosSaida];
@@ -89,7 +99,7 @@ public class Rede {
 		for(int i = 0; i < saidasOrigem.length; i++) {
 			saidasOrigem[i] = processarSaida(sinapsesOrigem[i].getOrigem());
 		}
-		double saida = neuronio.saidaAxionio(saidasOrigem);
+		double saida = neuronio.ativar(saidasOrigem);
 		memo.put(neuronio, saida);
 		return saida;
 	}
@@ -102,19 +112,19 @@ public class Rede {
 		for(int i = neuronios.length - 1; i > neuroniosCamadas[0] - 1; i--) {
 			neuronio = neuronios[i];
 			saidaNeuronio = memo.get(neuronio);
-			if (i > neuronios.length - qtdNeuroniosSaida) {
-				for (int j = 0; i < neuronio.getSinapsesOrigem().length; j ++) {
-					beta = saidaNeuronio * (1-saidaNeuronio) * -erro;
+			if (i > neuronios.length - qtdNeuroniosSaida - 1) {
+				for (int j = 0; j < neuronio.getSinapsesOrigem().length; j ++) {
+					beta = saidaNeuronio * (1-saidaNeuronio) * erro;
 					sinapse = neuronio.getSinapsesOrigem()[j];
 					mapaMudancas.put(sinapse, - fator * memo.get(sinapse.getOrigem()) * beta);
 				}
 			} else {
 				double somatorio = 0d;
-				for (int j = 0; i < neuronio.getSinapsesDestino().length; j ++) {
+				for (int j = 0; j < neuronio.getSinapsesDestino().length; j ++) {
 					somatorio += memo.get(neuronio) * neuronio.getSinapsesDestino()[j].getPeso();
 				}
-				for (int j = 0; i < neuronio.getSinapsesOrigem().length; j ++) {
-					beta = saidaNeuronio * (1-saidaNeuronio) * -somatorio;
+				for (int j = 0; j < neuronio.getSinapsesOrigem().length; j ++) {
+					beta = saidaNeuronio * (1-saidaNeuronio) * somatorio;
 					sinapse = neuronio.getSinapsesOrigem()[j];
 					mapaMudancas.put(sinapse, - fator * memo.get(sinapse.getOrigem()) * beta);
 				}
@@ -126,11 +136,12 @@ public class Rede {
 	public void ajustarPesos() {
 		Sinapse sinapse;
 		for (int i = neuroniosCamadas[0]; i < neuronios.length; i++) {
-			for (int j = 0; i < neuronios[i].getSinapsesOrigem().length; j ++) {
+			for (int j = 0; j < neuronios[i].getSinapsesOrigem().length; j ++) {
 				sinapse = neuronios[i].getSinapsesOrigem()[j];
-				sinapse.setPeso(mapaMudancas.get(sinapse));
+				sinapse.setPeso(sinapse.getPeso() - mapaMudancas.get(sinapse));
 			}
 		}
+		inicializarMapaMudanca();
 	}
 
 }

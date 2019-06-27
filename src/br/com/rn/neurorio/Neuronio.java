@@ -14,8 +14,15 @@ public class Neuronio{
 		this.validador = validador;
 	}
 	
-	public Double saidaAxionio(double... dentritos) {
-		double somatorio = somar(dentritos);
+	public Double ativar(double... dentritos) {
+		double somatorio = 0;
+		if (null != sinapsesOrigem) {
+			somatorio = somar(dentritos);
+		} else {
+			for(int i = 0; i < dentritos.length; i++) {
+				somatorio += dentritos[i];
+			}
+		}
 		return validador.validar(somatorio);
 	}
 	

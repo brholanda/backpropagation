@@ -6,29 +6,36 @@ public class TreinadorRede extends Treinador {
 
 	@Override
 	public void treinar() {
-		double[] conjuntoEntradas = { 0.5, 0.5, 0.5 };
-		double[] saidasEsperadas = { 0.8, 0.2 };
+		double[][] conjuntoEntradas = { { 1, 1 }, { 1, 0 }, { 0, 1 }, { 0, 0 } };
+		int[] saidasEsperadas = { 0, 0, 0, 1 };
 		double[] saidas;
 		double erro = 0d;
 
 		Boolean saidasOk;
 		
-		Rede rede = new Rede(conjuntoEntradas.length, 3, 2);
+		Rede rede = new Rede(conjuntoEntradas[0].length, 3, 1);
 		
 		do {
 			saidasOk = true;
-			saidas = rede.processarSaidas(conjuntoEntradas);
-			for (int i = 0; i < saidas.length; i++) {
-				if (saidas[i] != saidasEsperadas[i]) {
-					saidasOk = false;
-					erro = 1/2 * (Math.pow(saidasEsperadas[i] - saidas[i],2));
-					rede.verificaErro(erro, fator);
+			erro = 0d;
+			for (int j = 0; j < conjuntoEntradas.length; j++) {
+				saidas = rede.processarSaidas(conjuntoEntradas[j]);
+				for (int i = 0; i < saidas.length; i++) {
+					if (saidas[i] != saidasEsperadas[j]) {
+						saidasOk = false;
+						erro +=  saidas[i] - saidasEsperadas[j];
+						System.out.println(saidas[i] + " - " + saidasEsperadas[j]);
+					}
 				}
 			}
 			if (!saidasOk) {
+				rede.verificaErro(erro, fator);
 				rede.ajustarPesos();
 			}
 		} while (!saidasOk);
+		for (int j = 0; j < conjuntoEntradas.length; j++) {
+			System.out.println(conjuntoEntradas[j] + " " + rede.processarSaidas(conjuntoEntradas[j]));
+		}
 	}
 
 }
